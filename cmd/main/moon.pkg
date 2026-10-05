@@ -1,0 +1,9 @@
+supported_targets = "js"
+
+import {
+  "btlqql/moon_tracelens" @engine,
+  "moonbitlang/core/json",
+  "moonbitlang/core/env",
+}
+
+pkgtype(kind: "executable")
