@@ -1,0 +1,116 @@
+[
+  {
+    "name": "request metrics timeline",
+    "request": {
+      "events": [
+        {
+          "timestamp": "2026-10-01T00:00:00Z",
+          "level": "info",
+          "message": "start",
+          "request_id": "r",
+          "duration_ms": 10
+        },
+        {
+          "timestamp": "2026-10-01T00:00:01+00:00",
+          "level": "error",
+          "message": "failed",
+          "request_id": "r",
+          "duration_ms": 20
+        }
+      ]
+    },
+    "expected": {
+      "metrics/count": 2,
+      "metrics/errors": 1,
+      "metrics/duration_p95_ms": 20,
+      "groups/0/elapsed_seconds": 1
+    },
+    "error": false
+  },
+  {
+    "name": "time filter",
+    "request": {
+      "events": [
+        {
+          "timestamp": "2026-10-01T00:00:00Z",
+          "level": "info",
+          "message": "start",
+          "request_id": "r",
+          "duration_ms": 10
+        },
+        {
+          "timestamp": "2026-10-01T00:00:01+00:00",
+          "level": "error",
+          "message": "failed",
+          "request_id": "r",
+          "duration_ms": 20
+        }
+      ],
+      "since": "2026-10-01T00:00:01Z"
+    },
+    "expected": {
+      "metrics/count": 1,
+      "metrics/errors": 1
+    },
+    "error": false
+  },
+  {
+    "name": "offset equivalence",
+    "request": {
+      "events": [
+        {
+          "timestamp": "1970-01-01T01:00:00+01:00",
+          "level": "info",
+          "message": "x"
+        }
+      ]
+    },
+    "expected": {
+      "events/0/timestamp": 0
+    },
+    "error": false
+  },
+  {
+    "name": "empty metrics",
+    "request": {
+      "events": []
+    },
+    "expected": {
+      "metrics/count": 0,
+      "metrics/error_fraction": null
+    },
+    "error": false
+  },
+  {
+    "name": "bad date diagnostic",
+    "request": {
+      "events": [
+        {
+          "timestamp": "2025-02-29T00:00:00Z",
+          "level": "info",
+          "message": "x"
+        }
+      ]
+    },
+    "expected": {
+      "metrics/count": 0
+    },
+    "error": false
+  },
+  {
+    "name": "level normalisation",
+    "request": {
+      "events": [
+        {
+          "timestamp": 1,
+          "level": "warning",
+          "message": "x"
+        }
+      ]
+    },
+    "expected": {
+      "events/0/level": "warn"
+    },
+    "error": false
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-10-01T00:00:00Z",
+      "level": "info",
+      "message": "start",
+      "request_id": "r",
+      "duration_ms": 10
+    },
+    {
+      "timestamp": "2026-10-01T00:00:01+00:00",
+      "level": "error",
+      "message": "failed",
+      "request_id": "r",
+      "duration_ms": 20
+    }
+  ],
+  "since": "2026-10-01T00:00:01Z"
+}
