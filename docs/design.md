@@ -1,11 +1,17 @@
-# Moon TraceLens architecture
+# Implemented architecture
 
-Status: development plan; functionality must be checked against release documentation.
+## Core
 
-目标：把异构日志转为可查询事件，建立请求和作业的关联时间线。
+JSONL and five-column pipe log ingestion; multiline stack continuations; epoch/RFC3339 timestamps; severity normalisation; source/line diagnostics; filters; request/service grouping; sorted timelines; error fractions and nearest-rank duration p95. scripts/files.mjs reads real selected log files.
 
-核心模块：JSONL/文本格式解析；时间与时区归一化；多行错误事件；结构化字段索引；查询与分组聚合；按明确 ID 的事件关联；增量读取与检查点；报告和 CLI。关联报告显示缺失事件与时钟不确定性，不把先后顺序冒称因果证明。
+## Boundaries
 
-三个场景：本地服务请求超时排查；批处理失败与重试复盘；发布前后错误率与耗时分布对比。测试服务实际生成日志，并将日志作为可复现输入，固定期待的请求链、失败作业和统计值。
+Offline batch analysis. Uppercase T/Z RFC3339, years 0001–9999, no leap seconds. Timestamps are seconds and duration_ms is milliseconds. Sources that fail event normalisation produce diagnostics; orphan pipe continuations are structural errors. No live tailing, rotation recovery or distributed tracing exporter.
 
-验收：十万事件的查询与聚合和独立参考结果一致；增量读取与一次性读取的结果一致。失败验证覆盖非法时间、日志截断/轮转、损坏检查点、缺关联 ID 与多行栈。十月做离线日志分析，不包含分布式采集平台或在线告警服务。
+## Integration
+
+The core accepts semantic values and returns deterministic JSON-shaped reports. Host adapters handle files, network or processes; they invoke the compiled MoonBit engine. The CLI package declares `supported_targets = "js"`; other backends test the portable core.
+
+## Validation evidence
+
+Fixture cases are hand-checked assertions. Independent reference checks and integration scripts are runnable from a clean checkout. CI executes four core backends and host checks. Historical proposal targets are not release results.

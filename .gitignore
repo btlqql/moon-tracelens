@@ -3,3 +3,6 @@
 /.mooncakes/
 *.log
 __pycache__/
+
+.taskforge-cache.json
+.taskforge-journal.json
