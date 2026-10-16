@@ -73,21 +73,25 @@ fn ingest(request : Value) -> (Array[Value], Array[Value]) raise {
         raise InputError("unsupported log format")
       }
       let mut line_number = 0
+      let mut continuation_index : Int? = None
       for line in str(get(source, "text")).split("\n") {
         line_number += 1
         if line.trim().is_empty() {
           continue
         }
         if format == "pipe" && (line.has_prefix(" ") || line.has_prefix("\t")) {
-          if events.is_empty() ||
-            get(events[events.length() - 1], "source") != String(name) {
-            raise InputError("orphan multiline continuation")
+          let index = match continuation_index {
+            Some(index) => index
+            None => {
+              diagnostics.push(record([("source", String(name)), ("line", Number(line_number.to_double())), ("reason", String("orphan multiline continuation"))]))
+              continue
+            }
           }
-          let fields = obj(events[events.length() - 1]).copy()
+          let fields = obj(events[index]).copy()
           fields["message"] = String(
             str(fields["message"]) + "\n" + line.to_string(),
           )
-          events[events.length() - 1] = Object(fields)
+          events[index] = Object(fields)
           continue
         }
         try {
@@ -97,8 +101,10 @@ fn ingest(request : Value) -> (Array[Value], Array[Value]) raise {
             parse_pipe(line.trim_end().to_string())
           }
           events.push(normalize_event(raw, name, line_number))
+          continuation_index = Some(events.length() - 1)
         } catch {
-          error =>
+          error => {
+            continuation_index = None
             diagnostics.push(
               record([
                 ("source", String(name)),
@@ -106,6 +112,7 @@ fn ingest(request : Value) -> (Array[Value], Array[Value]) raise {
                 ("reason", String(error.to_string())),
               ]),
             )
+          }
         }
       }
     }
