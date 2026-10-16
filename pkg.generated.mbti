@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn compare_windows(Value, Value) -> Value raise
+
 pub fn execute(Json) -> Json raise
 
 pub fn from_json(Json) -> Value

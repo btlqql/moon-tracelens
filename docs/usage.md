@@ -159,3 +159,210 @@ node scripts/files.mjs MANIFEST.json
 ```
 
 Read the current boundaries before using this adapter.
+
+
+# 0.2.0 additional executable scenarios
+
+## baseline group alignment
+
+```json
+{
+  "operation": "compare",
+  "before": {
+    "events": [
+      {
+        "timestamp": 1,
+        "level": "info",
+        "message": "sample",
+        "service": "a",
+        "duration_ms": 10
+      },
+      {
+        "timestamp": 2,
+        "level": "error",
+        "message": "sample",
+        "service": "b",
+        "duration_ms": 20
+      }
+    ],
+    "group_by": "service"
+  },
+  "after": {
+    "events": [
+      {
+        "timestamp": 3,
+        "level": "error",
+        "message": "sample",
+        "service": "a",
+        "duration_ms": 30
+      },
+      {
+        "timestamp": 4,
+        "level": "info",
+        "message": "sample",
+        "service": "c",
+        "duration_ms": 5
+      }
+    ],
+    "group_by": "service"
+  }
+}
+```
+
+Expected result fields:
+
+```json
+{
+  "complete": true,
+  "metrics/delta/count": 0,
+  "metrics/delta/errors": 0,
+  "metrics/delta/duration_p95_ms": 10,
+  "groups/0/key": "a",
+  "groups/0/status": "retained",
+  "groups/0/metrics/delta/errors": 1,
+  "groups/1/status": "removed",
+  "groups/1/metrics/after/count": 0,
+  "groups/1/metrics/delta/error_fraction": null,
+  "groups/2/status": "added"
+}
+```
+
+## empty baseline rate is unknown
+
+```json
+{
+  "operation": "compare",
+  "before": {
+    "events": []
+  },
+  "after": {
+    "events": [
+      {
+        "timestamp": 1,
+        "level": "error",
+        "message": "sample",
+        "service": "api",
+        "duration_ms": 5
+      }
+    ]
+  }
+}
+```
+
+Expected result fields:
+
+```json
+{
+  "metrics/delta/count": 1,
+  "metrics/before/error_fraction": null,
+  "metrics/delta/error_fraction": null
+}
+```
+
+## comparison preserves parse failures
+
+```json
+{
+  "operation": "compare",
+  "before": {
+    "events": []
+  },
+  "after": {
+    "sources": [
+      {
+        "name": "bad",
+        "text": "invalid json"
+      }
+    ]
+  }
+}
+```
+
+Expected result fields:
+
+```json
+{
+  "complete": false,
+  "after_diagnostics/0/line": 1,
+  "metrics/after/count": 0
+}
+```
+
+## group dimension mismatch
+
+```json
+{
+  "operation": "compare",
+  "before": {
+    "events": [
+      {
+        "timestamp": 1,
+        "level": "info",
+        "message": "sample",
+        "service": "a",
+        "duration_ms": 10
+      },
+      {
+        "timestamp": 2,
+        "level": "error",
+        "message": "sample",
+        "service": "b",
+        "duration_ms": 20
+      }
+    ],
+    "group_by": "service"
+  },
+  "after": {
+    "events": [],
+    "group_by": "request_id"
+  }
+}
+```
+
+Expected: an input error.
+
+## backwards time window
+
+```json
+{
+  "events": [],
+  "since": 10,
+  "until": 5
+}
+```
+
+Expected: an input error.
+
+## half open time window
+
+```json
+{
+  "events": [
+    {
+      "timestamp": 1,
+      "level": "info",
+      "message": "sample",
+      "service": "a",
+      "duration_ms": 1
+    },
+    {
+      "timestamp": 2,
+      "level": "error",
+      "message": "sample",
+      "service": "a",
+      "duration_ms": 2
+    }
+  ],
+  "since": 1,
+  "until": 2
+}
+```
+
+Expected result fields:
+
+```json
+{
+  "metrics/count": 1,
+  "metrics/errors": 0
+}
+```

@@ -83,7 +83,13 @@ fn ingest(request : Value) -> (Array[Value], Array[Value]) raise {
           let index = match continuation_index {
             Some(index) => index
             None => {
-              diagnostics.push(record([("source", String(name)), ("line", Number(line_number.to_double())), ("reason", String("orphan multiline continuation"))]))
+              diagnostics.push(
+                record([
+                  ("source", String(name)),
+                  ("line", Number(line_number.to_double())),
+                  ("reason", String("orphan multiline continuation")),
+                ]),
+              )
               continue
             }
           }
@@ -182,7 +188,11 @@ fn metric(events : Array[Value]) -> Value raise {
 ///|
 fn analyze(request : Value) -> Value raise {
   ignore(obj(request))
-  if get(request, "since") != Null && get(request, "until") != Null && timestamp(get(request, "since")) > timestamp(get(request, "until")) { raise InputError("since must not exceed until") }
+  if get(request, "since") != Null &&
+    get(request, "until") != Null &&
+    timestamp(get(request, "since")) > timestamp(get(request, "until")) {
+    raise InputError("since must not exceed until")
+  }
   let (all_events, diagnostics) = ingest(request)
   let mut events = all_events
   if get(request, "where") != Null {

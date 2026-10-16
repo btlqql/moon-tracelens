@@ -1,3 +1,3 @@
-# Version 0.1.0 boundaries
+# Version 0.2.0 boundaries
 
-Offline batch analysis. Uppercase T/Z RFC3339, years 0001–9999, no leap seconds. Timestamps are seconds and duration_ms is milliseconds. Sources that fail event normalisation produce diagnostics; orphan pipe continuations are structural errors. No live tailing, rotation recovery or distributed tracing exporter.
+本项目是离线批次分析工具，没有实时 tail、轮转断点恢复、分布式采集器或完整 OpenTelemetry 导出。RFC3339 采用大写 T/Z，不接受闰秒。比较不提供因果推断、统计显著性和自动发布结论；指标均由有效且经过筛选的事件计算，须结合诊断阅读。

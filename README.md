@@ -3,9 +3,9 @@
 Offline log investigation, implemented in MoonBit with a JSON CLI and reusable library API.
 
 - Repository: [https://github.com/btlqql/moon-tracelens](https://github.com/btlqql/moon-tracelens)
-- Package: `btlqql/moon_tracelens@0.1.0`
+- Package: `btlqql/moon_tracelens@0.2.0`
 - License: Apache-2.0
-- Release scope: **0.1.0 initial implementation**. The broader competition proposal in `docs/proposal.md` is a reference design, not a claim that every planned capability is implemented.
+- Release scope: **0.2.0 revised component release**. The broader competition proposal in `docs/proposal.md` is a reference design, not a claim that every planned capability is implemented.
 
 ## Implemented
 
@@ -27,7 +27,7 @@ Pass `-` to read a UTF-8 JSON request from stdin. A single request must be at mo
 ## Library use
 
 ```sh
-moon add btlqql/moon_tracelens@0.1.0
+moon add btlqql/moon_tracelens@0.2.0
 ```
 
 In the consumer's `moon.pkg`:
@@ -59,10 +59,23 @@ node scripts/check.mjs
 python -B scripts/reference.py
 ```
 
-There are 6 checked fixture cases in `tests/cases.json`, executed both in MoonBit white-box tests and through the actual Node CLI. Independent reference checks use Python's standard library or separately written algorithms. Fixtures are synthetic and are not presented as production adoption evidence. See [input and output examples](docs/usage.md) and [current boundaries](docs/boundaries.md).
+There are 12 checked fixture cases in `tests/cases.json`, executed both in MoonBit white-box tests and through the actual Node CLI. Independent reference checks use Python's standard library or separately written algorithms. Fixtures are synthetic and are not presented as production adoption evidence. See [input and output examples](docs/usage.md) and [current boundaries](docs/boundaries.md).
 
 ## Current boundaries
 
-Offline batch analysis. Uppercase T/Z RFC3339, years 0001–9999, no leap seconds. Timestamps are seconds and duration_ms is milliseconds. Sources that fail event normalisation produce diagnostics; orphan pipe continuations are structural errors. No live tailing, rotation recovery or distributed tracing exporter.
+Offline batch analysis. Uppercase T/Z RFC3339, years 0001–9999, no leap seconds. Timestamps are seconds and duration_ms is milliseconds. Sources that fail event normalisation produce diagnostics; orphan pipe continuations are quarantined as diagnostics. No live tailing, rotation recovery or distributed tracing exporter.
 
 See [source and dependency attribution](THIRD_PARTY.md). This release does not establish competition eligibility or organizer acceptance.
+
+
+## Version 0.2.0 revision
+
+Baseline/current comparison with aligned groups, metric deltas and preserved ingestion diagnostics. Orphan multiline continuations are quarantined, including after bad records or across separately supplied sources.
+
+本项目是离线批次分析工具，没有实时 tail、轮转断点恢复、分布式采集器或完整 OpenTelemetry 导出。RFC3339 采用大写 T/Z，不接受闰秒。比较不提供因果推断、统计显著性和自动发布结论；指标均由有效且经过筛选的事件计算，须结合诊断阅读。
+
+Run the additional complete scenario:
+
+```sh
+moon run cmd/main --target js -- examples/scenario-4.json
+```
