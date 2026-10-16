@@ -180,7 +180,9 @@ fn metric(events : Array[Value]) -> Value raise {
 }
 
 ///|
-pub fn run(request : Value) -> Value raise {
+fn analyze(request : Value) -> Value raise {
+  ignore(obj(request))
+  if get(request, "since") != Null && get(request, "until") != Null && timestamp(get(request, "since")) > timestamp(get(request, "until")) { raise InputError("since must not exceed until") }
   let (all_events, diagnostics) = ingest(request)
   let mut events = all_events
   if get(request, "where") != Null {
