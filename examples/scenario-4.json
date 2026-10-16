@@ -1,0 +1,41 @@
+{
+  "operation": "compare",
+  "before": {
+    "events": [
+      {
+        "timestamp": 1,
+        "level": "info",
+        "message": "sample",
+        "service": "a",
+        "duration_ms": 10
+      },
+      {
+        "timestamp": 2,
+        "level": "error",
+        "message": "sample",
+        "service": "b",
+        "duration_ms": 20
+      }
+    ],
+    "group_by": "service"
+  },
+  "after": {
+    "events": [
+      {
+        "timestamp": 3,
+        "level": "error",
+        "message": "sample",
+        "service": "a",
+        "duration_ms": 30
+      },
+      {
+        "timestamp": 4,
+        "level": "info",
+        "message": "sample",
+        "service": "c",
+        "duration_ms": 5
+      }
+    ],
+    "group_by": "service"
+  }
+}

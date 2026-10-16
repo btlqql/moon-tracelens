@@ -15,3 +15,28 @@ for i in range(50):
     result = run({'events':[{'timestamp':date.isoformat(),'level':'info','message':'oracle'}]})
     assert abs(result['events'][0]['timestamp'] - date.timestamp()) < 0.00001
 print('Python datetime oracle: 50 calendar/timezone/fraction cases passed')
+
+# Revision oracle: compare service buckets using Python counts and nearest-rank percentiles.
+random.seed(20261016)
+def summary(events):
+    durations=sorted(e['duration_ms'] for e in events)
+    return {'count':len(events),'errors':sum(e['level']=='error' for e in events),
+        'error_fraction':sum(e['level']=='error' for e in events)/len(events) if events else None,
+        'duration_p95_ms':durations[math.ceil(len(durations)*0.95)-1] if durations else None}
+for iteration in range(20):
+    windows=[]
+    for _ in range(2):
+        windows.append([{'timestamp':i,'level':random.choice(['info','error']),'message':'sample',
+            'service':random.choice(['a','b','c']),'duration_ms':random.randrange(100)} for i in range(random.randrange(20))])
+    a,b=windows
+    result=run({'operation':'compare','before':{'events':a,'group_by':'service'},'after':{'events':b,'group_by':'service'}})
+    for side,events in [('before',a),('after',b)]:
+        for key,expected in summary(events).items():
+            actual=result['metrics'][side][key]
+            assert actual==expected or (actual is not None and expected is not None and abs(actual-expected)<1e-12)
+    for group in result['groups']:
+        for side,events in [('before',a),('after',b)]:
+            selected=[e for e in events if e['service']==group['key']]
+            assert group['metrics'][side]['count']==len(selected)
+            assert group['metrics'][side]['errors']==sum(e['level']=='error' for e in selected)
+print('Independent comparison oracle: 20 window pairs, service alignment and p95 summaries passed')

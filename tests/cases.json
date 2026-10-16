@@ -112,5 +112,181 @@
       "events/0/level": "warn"
     },
     "error": false
+  },
+  {
+    "name": "baseline group alignment",
+    "request": {
+      "operation": "compare",
+      "before": {
+        "events": [
+          {
+            "timestamp": 1,
+            "level": "info",
+            "message": "sample",
+            "service": "a",
+            "duration_ms": 10
+          },
+          {
+            "timestamp": 2,
+            "level": "error",
+            "message": "sample",
+            "service": "b",
+            "duration_ms": 20
+          }
+        ],
+        "group_by": "service"
+      },
+      "after": {
+        "events": [
+          {
+            "timestamp": 3,
+            "level": "error",
+            "message": "sample",
+            "service": "a",
+            "duration_ms": 30
+          },
+          {
+            "timestamp": 4,
+            "level": "info",
+            "message": "sample",
+            "service": "c",
+            "duration_ms": 5
+          }
+        ],
+        "group_by": "service"
+      }
+    },
+    "expected": {
+      "complete": true,
+      "metrics/delta/count": 0,
+      "metrics/delta/errors": 0,
+      "metrics/delta/duration_p95_ms": 10,
+      "groups/0/key": "a",
+      "groups/0/status": "retained",
+      "groups/0/metrics/delta/errors": 1,
+      "groups/1/status": "removed",
+      "groups/1/metrics/after/count": 0,
+      "groups/1/metrics/delta/error_fraction": null,
+      "groups/2/status": "added"
+    },
+    "error": false
+  },
+  {
+    "name": "empty baseline rate is unknown",
+    "request": {
+      "operation": "compare",
+      "before": {
+        "events": []
+      },
+      "after": {
+        "events": [
+          {
+            "timestamp": 1,
+            "level": "error",
+            "message": "sample",
+            "service": "api",
+            "duration_ms": 5
+          }
+        ]
+      }
+    },
+    "expected": {
+      "metrics/delta/count": 1,
+      "metrics/before/error_fraction": null,
+      "metrics/delta/error_fraction": null
+    },
+    "error": false
+  },
+  {
+    "name": "comparison preserves parse failures",
+    "request": {
+      "operation": "compare",
+      "before": {
+        "events": []
+      },
+      "after": {
+        "sources": [
+          {
+            "name": "bad",
+            "text": "invalid json"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "complete": false,
+      "after_diagnostics/0/line": 1,
+      "metrics/after/count": 0
+    },
+    "error": false
+  },
+  {
+    "name": "group dimension mismatch",
+    "request": {
+      "operation": "compare",
+      "before": {
+        "events": [
+          {
+            "timestamp": 1,
+            "level": "info",
+            "message": "sample",
+            "service": "a",
+            "duration_ms": 10
+          },
+          {
+            "timestamp": 2,
+            "level": "error",
+            "message": "sample",
+            "service": "b",
+            "duration_ms": 20
+          }
+        ],
+        "group_by": "service"
+      },
+      "after": {
+        "events": [],
+        "group_by": "request_id"
+      }
+    },
+    "expected": {},
+    "error": true
+  },
+  {
+    "name": "backwards time window",
+    "request": {
+      "events": [],
+      "since": 10,
+      "until": 5
+    },
+    "expected": {},
+    "error": true
+  },
+  {
+    "name": "half open time window",
+    "request": {
+      "events": [
+        {
+          "timestamp": 1,
+          "level": "info",
+          "message": "sample",
+          "service": "a",
+          "duration_ms": 1
+        },
+        {
+          "timestamp": 2,
+          "level": "error",
+          "message": "sample",
+          "service": "a",
+          "duration_ms": 2
+        }
+      ],
+      "since": 1,
+      "until": 2
+    },
+    "expected": {
+      "metrics/count": 1,
+      "metrics/errors": 0
+    },
+    "error": false
   }
 ]
