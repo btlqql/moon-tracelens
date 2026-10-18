@@ -104,6 +104,7 @@ pub fn compare_windows(before : Value, after : Value) -> Value raise {
 ///|
 pub fn run(request : Value) -> Value raise {
   match optional_str(get(request, "operation"), "analyze") {
+    "buckets" => bucket_events(request)
     "analyze" => analyze(request)
     "compare" => compare_windows(get(request, "before"), get(request, "after"))
     _ => raise InputError("operation must be analyze or compare")
