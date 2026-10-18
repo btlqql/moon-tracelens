@@ -1,0 +1,26 @@
+{
+  "operation": "buckets",
+  "events": [
+    {
+      "timestamp": -1,
+      "level": "info",
+      "message": "x"
+    },
+    {
+      "timestamp": 0,
+      "level": "info",
+      "message": "x"
+    },
+    {
+      "timestamp": 9,
+      "level": "info",
+      "message": "x"
+    },
+    {
+      "timestamp": 10,
+      "level": "error",
+      "message": "x"
+    }
+  ],
+  "width_seconds": 10
+}

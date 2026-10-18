@@ -288,5 +288,103 @@
       "metrics/errors": 0
     },
     "error": false
+  },
+  {
+    "name": "followup time bucket boundaries",
+    "request": {
+      "operation": "buckets",
+      "events": [
+        {
+          "timestamp": -1,
+          "level": "info",
+          "message": "x"
+        },
+        {
+          "timestamp": 0,
+          "level": "info",
+          "message": "x"
+        },
+        {
+          "timestamp": 9,
+          "level": "info",
+          "message": "x"
+        },
+        {
+          "timestamp": 10,
+          "level": "error",
+          "message": "x"
+        }
+      ],
+      "width_seconds": 10
+    },
+    "expected": {
+      "events_considered": 4,
+      "buckets/0/start": -10,
+      "buckets/0/metrics/count": 1,
+      "buckets/1/start": 0,
+      "buckets/1/metrics/count": 2,
+      "buckets/2/start": 10,
+      "buckets/2/metrics/errors": 1
+    },
+    "error": false
+  },
+  {
+    "name": "followup bucket zero width",
+    "request": {
+      "operation": "buckets",
+      "events": [],
+      "width_seconds": 0
+    },
+    "expected": {},
+    "error": true
+  },
+  {
+    "name": "followup bucket filtered counts",
+    "request": {
+      "operation": "buckets",
+      "events": [
+        {
+          "timestamp": -1,
+          "level": "info",
+          "message": "x"
+        },
+        {
+          "timestamp": 0,
+          "level": "info",
+          "message": "x"
+        },
+        {
+          "timestamp": 9,
+          "level": "info",
+          "message": "x"
+        },
+        {
+          "timestamp": 10,
+          "level": "error",
+          "message": "x"
+        }
+      ],
+      "width_seconds": 10,
+      "since": 0,
+      "until": 10
+    },
+    "expected": {
+      "events_considered": 2,
+      "buckets/0/metrics/count": 2
+    },
+    "error": false
+  },
+  {
+    "name": "followup empty buckets omitted",
+    "request": {
+      "operation": "buckets",
+      "events": [],
+      "width_seconds": 10
+    },
+    "expected": {
+      "buckets": [],
+      "events_considered": 0
+    },
+    "error": false
   }
 ]
