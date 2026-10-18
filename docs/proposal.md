@@ -1,60 +1,71 @@
-# Moon TraceLens——离线日志归一化、关联分析与基线差异比较组件
+# Moon TraceLens 项目申报参考书
 
-项目账号：btlqql  
-主要语言：MoonBit；开源许可：Apache-2.0  
-仓库：[https://github.com/btlqql/moon-tracelens](https://github.com/btlqql/moon-tracelens)  
-修订版本：0.2.0；日期：2026-10-16  
-公开包：[moon_tracelens@0.2.0](https://mooncakes.io/docs/btlqql/moon_tracelens@0.2.0)
+## 离线日志关联与时间维度分析
 
-> 本稿供个人参考。正文按本次实际实现说明功能和边界；公开提交、CI 及包发布状态另附核对记录。修改材料不代表主办方已重新审核通过。
+账号：btlqql；主要语言：MoonBit；许可：Apache-2.0；更新日期：2026-10-18。  
+GitHub：[https://github.com/btlqql/moon-tracelens](https://github.com/btlqql/moon-tracelens)  
+仓库发行：0.3.0；公共模块：[btlqql/moon_tracelens@0.3.0](https://mooncakes.io/docs/btlqql/moon_tracelens@0.3.0)
 
-## 一、项目简介
+本文供个人参考，按本次实际代码及边界编写。公开提交、CI、发布和独立安装结果另附交付核对表，不以材料修订代替主办方重新审核。
 
-TraceLens 使用 MoonBit 对离线日志归一化、排序、筛选和分组，输出事件时间线、错误计数、错误比例及延迟 p95。当前修订补充 baseline 与 current 两批日志的指标比较，并按同一分组维度对齐新增、移除和持续存在的服务或请求组，保留两侧解析诊断。
+## 一、项目职责与本次改进
 
-## 二、使用问题与组件职责
+新增 buckets 操作，按 width_seconds 和 origin 划分左闭右开的时间桶；负时间与小数边界同样按 floor 定义处理。每桶复用事件数、错误数、错误比例和延迟 p95，保留摄入诊断，空桶省略。先应用现有过滤，再生成桶；输出事件总数可以与桶计数之和对照。
 
-排查服务变更时，两份日志的数量、错误比例与延迟可能同时变化，仅逐条查看日志难以定位差异所在。TraceLens 提供可重复的批次比较，适合发布前后检查、离线故障复盘及多来源请求串联。输入数据和观察窗口由调用方选定，报告不据此自动推断变更的因果关系。
+已有核心能力继续保留，具体入口及完整使用方式见仓库 README 与 API 清单。本次对旧仓库先做版本同步，保留公开历史，不将此前已完成的功能重写为本轮新成果。
 
-## 三、核心机制与实现
+## 二、可复现输入及预期结果
 
-### 日志归一化与坏行处理
+以下为新增固定夹具之一，输入与字段断言同时纳入测试。更多场景见 tests/cases.json 和 examples/；所有样本均为合成数据，不作为真实用户证据。
 
-输入支持事件数组、JSONL 和五列 pipe 文本。时间可使用有限 epoch 秒或受支持的 RFC3339 表示，级别归一化后按时间排序。pipe 的缩进后续行可附加为堆栈内容。原始来源和行号进入报告，便于定位。
+```json
+{
+  "operation": "buckets",
+  "events": [
+    {
+      "timestamp": -1,
+      "level": "info",
+      "message": "x"
+    },
+    {
+      "timestamp": 0,
+      "level": "info",
+      "message": "x"
+    },
+    {
+      "timestamp": 9,
+      "level": "info",
+      "message": "x"
+    },
+    {
+      "timestamp": 10,
+      "level": "error",
+      "message": "x"
+    }
+  ],
+  "width_seconds": 10
+}
+```
 
-本次修复后续行归属：坏记录会中断当前堆栈归属，孤立缩进行进入诊断，而不会拼到更早的正常事件；独立提供的两个来源即使名字相同，也不会共享堆栈上下文。反向时间窗口被拒绝，正常筛选采用 since 包含、until 不包含的区间。
+预期结果字段：
 
-### 时间线与指标
+```json
+{
+  "events_considered": 4,
+  "buckets/0/start": -10,
+  "buckets/0/metrics/count": 1,
+  "buckets/1/start": 0,
+  "buckets/1/metrics/count": 2,
+  "buckets/2/start": 10,
+  "buckets/2/metrics/errors": 1
+}
+```
 
-分析支持字段相等、文本包含与时间窗口筛选，按 request_id 或调用方指定字段分组。每组报告时间线及 elapsed_seconds，指标包括 count、errors、error_fraction、duration_p95_ms 和级别分布。p95 使用排序后的最近秩方法。错误级别为 error 和 fatal；错误比例分母为实际参与分析的有效事件数。
+## 三、实现和验证结构
 
-### 基线比较
+领域计算由 MoonBit 完成，宿主侧负责文件、HTTP、进程或独立参考算法。可复用接口保持 execute(Json)→Json 与语义值 run 入口；实际公开接口以 pkg.generated.mbti 为准。当前根目录包含 18 项 MoonBit 测试声明，CLI 固定夹具 16 组；其中自动生成的夹具测试按生成测试统计，不算额外生产实现。
 
-新增 operation=compare，before 和 after 分别为分析请求，并要求相同 group_by。先独立归一化与筛选，再以分组键的稳定表示对齐组，返回 added、removed、retained。全局和各组均提供 before、after、delta；新增或移除组的计数侧补零，空侧错误比例和无样本的延迟保持 null，不能当成 0% 或零延迟。
-
-before_diagnostics 与 after_diagnostics 分别保留坏行。complete 仅表示两侧没有摄入诊断，不表示输入覆盖全部真实日志，也不表示存在统计显著性。指标差值是 after 减 before，没有按观察时长归一为吞吐率。
-
-## 四、完整案例
-
-### 案例一：请求故障复盘
-
-读取真实的本地合成 pipe 和 JSONL 文件，归一化三个事件、识别一条错误事件，将合法堆栈续行附到对应消息。坏 JSONL 行进入诊断，同一请求时间线显示起止相差一秒。修订回归用例另验证坏行后的缩进内容不能附到上一条正常消息。
-
-### 案例二：服务基线对齐
-
-基线含服务 a 的正常事件和服务 b 的错误事件，当前批次含 a 的错误事件和 c 的正常事件。报告把 a 标为 retained、b 标为 removed、c 标为 added。两侧总体均有两条事件和一条错误，但 a 的错误数增加一条，说明仅看总体计数会遗漏服务间变化。基线延迟 p95 为 20ms、当前为 30ms，差值为 10ms。
-
-### 案例三：空基线与不完整摄入
-
-没有基线事件时，基线比例及比例差值保持 null。当前侧存在坏 JSONL 时，报告保留其物理行号并标记 complete=false，而不以“有效事件为零”宣称当前侧没有错误。比较不同 group_by 的请求直接拒绝。
-
-## 五、工程结构与可复核验证
-
-领域计算位于 MoonBit 核心，标准 JSON 通过 execute 转换为语义值并调用 run。cmd/main 提供 JS CLI；核心可面向 JS、wasm、wasm-gc、native 测试，宿主脚本单独承担文件读取与参考核对。数据来自合成固定样本和确定性随机数据，没有声明真实生产用户或商业部署。
-
-当前包含 14 项 MoonBit 测试，以及通过真实 Node CLI 执行的 12 组 JSON 夹具。独立 Python datetime 检查覆盖 50 组日历、时区与小数秒；新增 20 对随机日志窗口，以独立计数、错误比例和最近秩 p95 验证总体及服务分组结果。 新案例输入见 examples/scenario-4.json；完整断言位于 tests/cases.json 和新增回归测试文件。
-
-复核命令：
+复核路径为四后端核心测试、真实 CLI 夹具、独立参考检查、宿主场景（适用时）、公开 CI 和公共包独立安装。新增检查运行：
 
 ```sh
 moon update
@@ -64,22 +75,20 @@ moon test --target wasm-gc
 moon test --target native
 moon build --target js
 node scripts/check.mjs
-python -B scripts/reference.py
-moon run cmd/main --target js -- examples/scenario-4.json
+python -B scripts/followup_reference.py
+moon run cmd/main --target js -- examples/followup-20261018.json
 ```
 
-native 需要 C 编译器；实际执行后端、结果及对应版本以交付核对记录和公开 CI 为准，不能将“提供测试命令”当成“测试已经通过”。
+native 需要 C 编译器；标为带变化/问题的有效报告可能使用退出码 2。实际通过记录和对应源码版本见交付核对表，命令列表本身不作为通过证明。
 
-## 六、针对初审反馈的工程修订
+## 四、开发记录与来源
 
-所提供通知指出：GitHub 仓库自 2026 年 9 月 1 日后的提交不足 10 次。修订前公开 main 分支核查为 5 次。本次围绕输入或状态错误修复、回归测试、新增领域能力、独立对照用例和版本文档逐步提交，使用真实当日时间，保留原有历史。
+本次提交按错误修正、针对性测试、领域实现、独立参考和版本文档记录，均使用真实日期并保留原有历史。2026-09-01 后的数量与哈希由 GitHub API 核查；达到数量条件不意味着所有提交已获主办方认定。
 
-开发记录可在 [公开 main 历史](https://github.com/btlqql/moon-tracelens/commits/main/) 核对；最终提交数量、日期及哈希见配套提交核对表。本次没有创建空提交、倒填日期或将既有成果重写成虚假历史。提交数达到通知所述数量只解决该项可核对条件，不等同于项目规模、独立价值或最终验收已经获认可。
+共同 JSON/CLI 脚手架按基础设施说明，不当作各项目独有创新。实际依赖、参考与许可见 THIRD_PARTY.md；第三方代码、生成夹具和文档不计为独立生产实现。功能有重叠时，不以“纯 MoonBit”“带测试”或“无 I/O”主张唯一性，项目差异应落到可执行机制与案例。
 
-## 七、来源、复用与当前边界
+## 五、当前边界
 
-领域实现和本次新增机制随仓库开源。MoonBit 标准库、Node 内置模块及 Python 标准库分别用于运行、宿主操作或独立核对；来源说明见 THIRD_PARTY.md。共享 JSON/CLI 脚手架按基础设施说明，不将其当成不同项目各自独有的领域创新。
+不填补空时间桶、不进行观察时长归一化，不把桶统计解释为因果关系或统计显著性。离线内存分析不包含实时 tail 和轮转恢复。
 
-本项目是离线批次分析工具，没有实时 tail、轮转断点恢复、分布式采集器或完整 OpenTelemetry 导出。RFC3339 采用大写 T/Z，不接受闰秒。比较不提供因果推断、统计显著性和自动发布结论；指标均由有效且经过筛选的事件计算，须结合诊断阅读。
-
-本稿撤去旧参考方案中尚未完成的高级能力、生产规模和性能目标。当前功能、测试与开发记录可以实际复核；项目仍是持续完善的组件，不能把原先 4,000–8,000 行内部目标写成已经交付的代码量。
+完整原方案的代码量、性能目标与用户效果不自动沿用为当前成果；统计以源码实际值及本机/CI 的测量记录为准。比赛准入、团队/项目数解释和最终审核仍由主办方决定，本轮不代提交报名。

@@ -1,5 +1,5 @@
 ///|
-fn decimal(source : String) -> Int raise InputError {
+fn decimal(source : String) -> Int32 raise InputError {
   if source == "" {
     raise InputError("empty decimal")
   }

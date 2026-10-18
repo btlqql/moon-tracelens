@@ -8,7 +8,7 @@ extern "js" fn read_input(path : String) -> String =
   #| }
 
 ///|
-extern "js" fn status(code : Int) -> Unit =
+extern "js" fn status(code : Int32) -> Unit =
   #| (code) => { process.exitCode = code; }
 
 ///|

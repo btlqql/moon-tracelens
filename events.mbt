@@ -1,5 +1,5 @@
 ///|
-fn normalize_event(raw : Value, source : String, line : Int) -> Value raise {
+fn normalize_event(raw : Value, source : String, line : Int32) -> Value raise {
   let fields = obj(raw).copy()
   let time = if get(raw, "timestamp") != Null {
     get(raw, "timestamp")
@@ -73,7 +73,7 @@ fn ingest(request : Value) -> (Array[Value], Array[Value]) raise {
         raise InputError("unsupported log format")
       }
       let mut line_number = 0
-      let mut continuation_index : Int? = None
+      let mut continuation_index : Int32? = None
       for line in str(get(source, "text")).split("\n") {
         line_number += 1
         if line.trim().is_empty() {

@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn bucket_events(Value) -> Value raise
+
 pub fn compare_windows(Value, Value) -> Value raise
 
 pub fn execute(Json) -> Json raise
