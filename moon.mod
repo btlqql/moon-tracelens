@@ -1,6 +1,6 @@
 name = "btlqql/moon_tracelens"
 
-version = "0.3.0"
+version = "0.4.0"
 
 readme = "README.md"
 
@@ -11,3 +11,7 @@ license = "Apache-2.0"
 keywords = [ "tracelens", "cli", "moonbit" ]
 
 description = "Offline event normalization, query and request correlation"
+
+import {
+  "gmlewis/sha256@0.17.33",
+}

@@ -2,4 +2,5 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
   "moonbitlang/core/math",
+  "btlqql/moon_tracelens/recovery",
 }

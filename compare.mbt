@@ -104,6 +104,8 @@ pub fn compare_windows(before : Value, after : Value) -> Value raise {
 ///|
 pub fn run(request : Value) -> Value raise {
   match optional_str(get(request, "operation"), "analyze") {
+    "stream_apply" | "stream_plan" | "stream_recover" => from_json(@recovery.execute(request.to_json()))
+    "stream_replay" => stream_replay(request)
     "buckets" => bucket_events(request)
     "analyze" => analyze(request)
     "compare" => compare_windows(get(request, "before"), get(request, "after"))
