@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "btlqql/moon_tracelens/recovery"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn execute(Json) -> Json raise
+
+pub fn from_json(Json) -> Value
+
+// Errors
+pub(all) suberror InputError {
+  InputError(String)
+} derive(@debug.Debug)
+pub fn InputError::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+pub(all) enum Value {
+  Null
+  Bool(Bool)
+  Number(Double)
+  String(String)
+  Array(Array[Value])
+  Object(Map[String, Value])
+} derive(Eq, @debug.Debug)
+pub fn Value::canonical(Self) -> String
+pub fn Value::equal(Self, Self) -> Bool
+pub fn Value::not_equal(Self, Self) -> Bool
+pub fn Value::to_json(Self) -> Json
+pub fn Value::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits

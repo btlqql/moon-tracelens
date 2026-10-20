@@ -3,9 +3,9 @@
 Offline log investigation, implemented in MoonBit with a JSON CLI and reusable library API.
 
 - Repository: [https://github.com/btlqql/moon-tracelens](https://github.com/btlqql/moon-tracelens)
-- Package: `btlqql/moon_tracelens@0.3.0`
+- Package: `btlqql/moon_tracelens@0.4.0`
 - License: Apache-2.0
-- Release scope: **0.2.0 revised component release**. The broader competition proposal in `docs/proposal.md` is a reference design, not a claim that every planned capability is implemented.
+- Release scope: **0.4.0 byte ingestion and committed recovery kernel**; see [recovery contract and limits](docs/recovery.md).
 
 ## Implemented
 
@@ -27,7 +27,7 @@ Pass `-` to read a UTF-8 JSON request from stdin. A single request must be at mo
 ## Library use
 
 ```sh
-moon add btlqql/moon_tracelens@0.3.0
+moon add btlqql/moon_tracelens@0.4.0
 ```
 
 In the consumer's `moon.pkg`:
@@ -63,7 +63,7 @@ There are 16 checked fixture cases in `tests/cases.json`, executed both in MoonB
 
 ## Current boundaries
 
-Offline batch analysis. Uppercase T/Z RFC3339, years 0001–9999, no leap seconds. Timestamps are seconds and duration_ms is milliseconds. Sources that fail event normalisation produce diagnostics; orphan pipe continuations are quarantined as diagnostics. No live tailing, rotation recovery or distributed tracing exporter.
+Offline batch analysis. Uppercase T/Z RFC3339, years 0001–9999, no leap seconds. Timestamps are seconds and duration_ms is milliseconds. Sources that fail event normalisation produce diagnostics; orphan pipe continuations are quarantined as diagnostics. A bounded journal host supports polling, explicit rename rotation, truncate diagnostics and crash recovery; see docs/recovery.md for exact guarantees. No distributed tracing exporter.
 
 See [source and dependency attribution](THIRD_PARTY.md). This release does not establish competition eligibility or organizer acceptance.
 
@@ -72,7 +72,7 @@ See [source and dependency attribution](THIRD_PARTY.md). This release does not e
 
 Baseline/current comparison with aligned groups, metric deltas and preserved ingestion diagnostics. Orphan multiline continuations are quarantined, including after bad records or across separately supplied sources.
 
-本项目是离线批次分析工具，没有实时 tail、轮转断点恢复、分布式采集器或完整 OpenTelemetry 导出。RFC3339 采用大写 T/Z，不接受闰秒。比较不提供因果推断、统计显著性和自动发布结论；指标均由有效且经过筛选的事件计算，须结合诊断阅读。
+旧版的离线分析能力保留；0.4.0 增加有界字节采集、轮转与恢复内核，详细边界见 docs/recovery.md。没有分布式采集器或完整 OpenTelemetry 导出。RFC3339 采用大写 T/Z，不接受闰秒。比较不提供因果推断、统计显著性和自动发布结论；指标均由有效且经过筛选的事件计算，须结合诊断阅读。
 
 Run the additional complete scenario:
 
@@ -87,6 +87,14 @@ moon run cmd/main --target js -- examples/scenario-4.json
 
 不填补空时间桶、不进行观察时长归一化，不把桶统计解释为因果关系或统计显著性。离线内存分析不包含实时 tail 和轮转恢复。
 
-Repository release: 0.3.0; installable MoonCakes module: `btlqql/moon_tracelens@0.3.0`. Earlier repository 1.0.0 labels are retained as history; the module uses the registry-compatible zero-major sequence.
+Repository release: 0.3.0; installable MoonCakes module: `btlqql/moon_tracelens@0.4.0`. Earlier repository 1.0.0 labels are retained as history; the module uses the registry-compatible zero-major sequence.
 
 Current source contains 18 MoonBit test declarations and 16 CLI fixtures (generated fixture tests are included in the declaration count). Run `python -B scripts/followup_reference.py` for independent follow-up oracles and `examples/followup-20261018.json` for the new scenario.
+
+## Version 0.4.0
+
+New MoonBit recovery subpackage: byte offsets and pending UTF-8/CRLF framing, bounded quarantine with raw bytes, explicit generation transitions, immutable SHA-256 journal batches, deterministic committed replay and host commit plans. Node JournalSource reads real files and preserves old descriptors across rename. Node Journal performs ordered file/directory synchronization on Linux and reports weaker process-crash-only durability on Windows. [Architecture, API, tests and exact limits](docs/recovery.md).
+
+```sh
+node scripts/journal-test.mjs
+```

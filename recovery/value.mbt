@@ -122,10 +122,7 @@ fn required(value : Value, key : String) -> Value raise InputError {
 }
 
 ///|
-fn fields_only(
-  value : Value,
-  allowed : Array[String],
-) -> Unit raise InputError {
+fn fields_only(value : Value, allowed : Array[String]) -> Unit raise InputError {
   for key, _ in object(value) {
     if !allowed.contains(key) {
       raise InputError("unknown field: " + key)
@@ -186,35 +183,4 @@ fn limit(
     raise InputError("budget out of range: " + key)
   }
   n.to_int()
-}
-
-///|
-fn validate_value(
-  value : Value,
-  depth : Int32,
-  nodes : Ref[Int32],
-) -> Unit raise InputError {
-  nodes.val += 1
-  if depth > 32 || nodes.val > 20000 {
-    raise InputError("model data exceeds depth or node budget")
-  }
-  match value {
-    Number(n) =>
-      if n.is_nan() || n.is_inf() {
-        raise InputError("non-finite model value")
-      }
-    Array(items) =>
-      for item in items {
-        validate_value(item, depth + 1, nodes)
-      }
-    Object(items) =>
-      for _, item in items {
-        validate_value(item, depth + 1, nodes)
-      }
-    String(s) =>
-      if s.length() > 65536 {
-        raise InputError("model string exceeds 65536 units")
-      }
-    _ => ()
-  }
 }

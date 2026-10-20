@@ -7,3 +7,7 @@ The domain code in this repository was implemented for this project with AI codi
 - [https://www.rfc-editor.org/rfc/rfc3339](https://www.rfc-editor.org/rfc/rfc3339)
 
 References inform formats and algorithms; they are not claims of interoperability with every feature of the referenced systems. MoonBit core is a toolchain dependency. Python standard-library and Node built-in APIs are used by host adapters and test oracles. No prior September project implementation was copied into this domain core.
+
+## Recovery dependency (0.4.0)
+
+SHA-256 uses `gmlewis/sha256@0.17.33` (its published license and source apply). Hex, UTF-8 and JSON use MoonBit core. Recovery Value helpers share infrastructure with the October projects. The byte framer, hash-chain replay and commit planner are project domain code.
