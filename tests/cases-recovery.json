@@ -1,0 +1,102 @@
+[
+  {
+    "name": "recovery initialize",
+    "request": {
+      "operation": "stream_apply",
+      "state": null,
+      "action": {
+        "type": "init",
+        "source": "demo",
+        "identity": "inode1"
+      }
+    },
+    "expected": {
+      "state": {
+        "schema": 1,
+        "source": "demo",
+        "identity": "inode1",
+        "generation": 0,
+        "format": "jsonl",
+        "max_line_bytes": 4096,
+        "offset": 0,
+        "line": 0,
+        "tail_hex": "",
+        "discarding": false,
+        "closed": false
+      },
+      "records": []
+    }
+  },
+  {
+    "name": "recovery preserves pending bytes",
+    "request": {
+      "operation": "stream_apply",
+      "state": {
+        "schema": 1,
+        "source": "demo",
+        "identity": "inode1",
+        "generation": 0,
+        "format": "jsonl",
+        "max_line_bytes": 4096,
+        "offset": 0,
+        "line": 0,
+        "tail_hex": "",
+        "discarding": false,
+        "closed": false
+      },
+      "action": {
+        "type": "append",
+        "offset": 0,
+        "hex": "e4b8"
+      }
+    },
+    "expected": {
+      "state/tail_hex": "e4b8",
+      "state/offset": 2,
+      "records": []
+    }
+  },
+  {
+    "name": "recovery quarantine invalid utf8",
+    "request": {
+      "operation": "stream_apply",
+      "state": {
+        "schema": 1,
+        "source": "demo",
+        "identity": "inode1",
+        "generation": 0,
+        "format": "jsonl",
+        "max_line_bytes": 4096,
+        "offset": 0,
+        "line": 0,
+        "tail_hex": "",
+        "discarding": false,
+        "closed": false
+      },
+      "action": {
+        "type": "append",
+        "offset": 0,
+        "hex": "ff0a"
+      }
+    },
+    "expected": {
+      "state/offset": 2,
+      "records/0/kind": "quarantine",
+      "records/0/hex": "ff0a",
+      "records/0/reason": "invalid_utf8"
+    }
+  },
+  {
+    "name": "recovery empty committed store",
+    "request": {
+      "operation": "stream_recover",
+      "manifest": null,
+      "batches": []
+    },
+    "expected": {
+      "revision": 0,
+      "state": null,
+      "source_bytes": 0
+    }
+  }
+]
