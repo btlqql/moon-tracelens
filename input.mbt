@@ -69,16 +69,6 @@ fn record(fields : Array[(String, Value)]) -> Value {
 }
 
 ///|
-fn strings(items : Array[String]) -> Value {
-  Array(items.map(fn(s) { String(s) }))
-}
-
-///|
-fn string_list(value : Value) -> Array[String] raise InputError {
-  arr(value).map(fn(item) { str(item) })
-}
-
-///|
 fn canonical(value : Value) -> String {
   match value {
     Object(fields) => {
@@ -92,17 +82,5 @@ fn canonical(value : Value) -> String {
     }
     Array(items) => "[" + items.map(canonical).join(",") + "]"
     _ => value.stringify()
-  }
-}
-
-///|
-fn truth(value : Value) -> Bool {
-  match value {
-    Bool(b) => b
-    Null => false
-    Number(n) => n != 0.0
-    String(s) => s != ""
-    Array(a) => !a.is_empty()
-    Object(o) => !o.is_empty()
   }
 }

@@ -1,5 +1,10 @@
 ///|
 fn stream_replay(request : Value) -> Value raise {
+  for key, _ in obj(request) {
+    if !["operation", "manifest", "batches", "analysis"].contains(key) {
+      raise InputError("unknown replay field: " + key)
+    }
+  }
   let recovered = from_json(
     @recovery.execute(
       record([
@@ -9,7 +14,7 @@ fn stream_replay(request : Value) -> Value raise {
       ]).to_json(),
     ),
   )
-  let texts : Map[String, String] = Map([])
+  let texts : Map[String, Array[String]] = Map([])
   let formats : Map[String, Value] = Map([])
   let order : Array[String] = []
   let storage : Array[Value] = []
@@ -21,16 +26,16 @@ fn stream_replay(request : Value) -> Value raise {
     }
     let key = canonical(Array([get(entry, "source"), get(entry, "generation")]))
     if !texts.contains(key) {
-      texts[key] = ""
+      texts[key] = []
       formats[key] = get(entry, "format")
       order.push(key)
     }
     if kind == "quarantine" {
       // A malformed non-whitespace line deliberately resets pipe continuation ownership.
-      texts[key] = texts[key] + "!TRACE_STORAGE_QUARANTINE!\n"
+      texts[key].push("!TRACE_STORAGE_QUARANTINE!\n")
       storage.push(entry)
     } else {
-      texts[key] = texts[key] + str(get(entry, "text")) + "\n"
+      texts[key].push(str(get(entry, "text")) + "\n")
       if kind == "incomplete" {
         storage.push(entry)
       }
@@ -49,7 +54,7 @@ fn stream_replay(request : Value) -> Value raise {
       record([
         ("name", String(key)),
         ("format", formats[key]),
-        ("text", String(texts[key])),
+        ("text", String(texts[key].join(""))),
       ])
     }),
   )

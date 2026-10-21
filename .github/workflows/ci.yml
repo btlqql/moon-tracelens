@@ -39,3 +39,4 @@ jobs:
       - run: node scripts/integration.mjs
       - run: python -B scripts/followup_reference.py
       - run: node scripts/journal-test.mjs
+      - run: node scripts/review-test.mjs

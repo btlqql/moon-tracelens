@@ -32,3 +32,7 @@ node scripts/journal-test.mjs
 ```
 
 67 host assertions include seven separate process crashes, stale-lock handling, exact orphan retry, corrupted/missing committed data, restart with split UTF-8, CRLF, multiline replay, real rename/late writes, truncate, writer exclusion, byte conservation across twelve chunk patterns, oversized and invalid UTF-8 quarantine. Pure recovery tests run with the original analyzer tests on four targets. These are synthetic deterministic checks, not deployment evidence.
+
+## 0.4.1 host validation
+
+Projected recovery envelopes are checked before writing any batch, so quota refusal cannot acknowledge an unreadable next chain. Host regression tests use a4096-byte envelope and verify no head, offset or immutable-batch change on overflow. Explicit restart options must match the checkpoint. Stale readers and sealed generations reject polling. Random temporary names tolerate old PID-based manifest residue without deleting it.17 additional host checks cover these conditions.

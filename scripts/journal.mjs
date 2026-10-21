@@ -2,7 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {engine} from './engine.mjs';
 import {fileURLToPath} from 'node:url';
+import {randomUUID} from 'node:crypto';
 const hashPattern=/^[a-f0-9]{64}$/;
+export function checkEnvelope(value,maximum=16000000) {
+  if(Buffer.byteLength(JSON.stringify(value))>maximum)throw Error('journal serialization quota');
+}
 function syncDirectory(dir) {
   if(process.platform==='win32') return; // explicitly reported as process-only durability on Windows
   const fd=fs.openSync(dir,'r');try{fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
@@ -13,7 +17,9 @@ function safeRead(file) {
   return JSON.parse(fs.readFileSync(file,'utf8'));
 }
 export class Journal {
-  constructor(directory) {
+  constructor(directory,{maxEnvelopeBytes=16000000}={}) {
+    if(!Number.isSafeInteger(maxEnvelopeBytes)||maxEnvelopeBytes<1024||maxEnvelopeBytes>16000000)throw Error('invalid journal envelope limit');
+    this.maxEnvelopeBytes=maxEnvelopeBytes;
     fs.mkdirSync(directory,{recursive:true});this.root=fs.realpathSync(directory);
     this.batches=path.join(this.root,'batches');
     fs.mkdirSync(this.batches,{recursive:true});
@@ -31,7 +37,7 @@ export class Journal {
       batches.push(batch);head=batch.previous;
     }
     const request={manifest,batches};
-    if(Buffer.byteLength(JSON.stringify(request))>16000000)throw Error('journal serialization quota');
+    checkEnvelope(request,this.maxEnvelopeBytes);
     return request;
   }
   recover() {return engine({operation:'stream_recover',...this.load()});}
@@ -40,13 +46,15 @@ export class Journal {
     const lock=path.join(this.root,'writer.lock');
     const lockFd=fs.openSync(lock,'wx');let batchFd,manifestFd;let step=0;
     const checkpoint=()=>{if(++step===crashAfter)process.exit(88);};
-    const temporary=path.join(this.root,'manifest.'+process.pid+'.tmp');
+    const temporary=path.join(this.root,'manifest.'+process.pid+'.'+randomUUID()+'.tmp');
     try {
       const loaded=this.load();
       const request={operation:'stream_plan',...loaded,action};
       if(Buffer.byteLength(JSON.stringify(request))>16777216)throw Error('request exceeds 16 MiB');
       const plan=engine(request);
       if(plan.expected_head!==(loaded.manifest?.head??null))throw Error('head conflict');
+      // A committed result must fit the envelope used by subsequent load/recover.
+      checkEnvelope({manifest:plan.manifest,batches:[plan.batch,...loaded.batches]},this.maxEnvelopeBytes);
       const batchPath=path.join(this.batches,plan.batch.hash+'.json');
       const content=JSON.stringify(plan.batch);
       try {batchFd=fs.openSync(batchPath,'wx');fs.writeFileSync(batchFd,content);}
@@ -73,16 +81,26 @@ export class Journal {
 }
 function identity(fd){const stat=fs.fstatSync(fd,{bigint:true});return stat.dev+':'+stat.ino;}
 export class JournalSource {
-  constructor(journal,file,{format='jsonl',source='log',max_line_bytes=4096}={}) {
+  constructor(journal,file,options={}) {
+    const {format='jsonl',source='log',max_line_bytes=4096}=options;
     this.journal=journal;this.file=path.resolve(file);this.fd=fs.openSync(this.file,'r');
     try {
+      if(!fs.fstatSync(this.fd).isFile())throw Error('source must be a regular file');
       const state=journal.recover().state;
       if(state===null)journal.commit({type:'init',source,identity:identity(this.fd),format,max_line_bytes});
-      else if(state.identity!==identity(this.fd))throw Error('source identity changed; drain old generation explicitly');
+      else {
+        if(state.identity!==identity(this.fd))throw Error('source identity changed; drain old generation explicitly');
+        if(state.closed)throw Error('source generation is sealed');
+        for(const key of ['source','format','max_line_bytes']) {
+          if(Object.hasOwn(options,key)&&options[key]!==state[key])throw Error('source configuration differs from checkpoint: '+key);
+        }
+      }
     } catch(error){fs.closeSync(this.fd);throw error;}
   }
   poll() {
     let state=this.journal.recover().state;
+    if(state.identity!==identity(this.fd))throw Error('stale source reader: generation identity changed');
+    if(state.closed)throw Error('source generation is sealed');
     if(fs.fstatSync(this.fd).size<state.offset){this.journal.commit({type:'rotate',identity:identity(this.fd),kind:'truncate'});state=this.journal.recover().state;}
     while(true) {
       const data=Buffer.alloc(4096);const n=fs.readSync(this.fd,data,0,data.length,state.offset);

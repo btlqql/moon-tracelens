@@ -3,7 +3,7 @@
 Offline log investigation, implemented in MoonBit with a JSON CLI and reusable library API.
 
 - Repository: [https://github.com/btlqql/moon-tracelens](https://github.com/btlqql/moon-tracelens)
-- Package: `btlqql/moon_tracelens@0.4.0`
+- Package: `btlqql/moon_tracelens@0.4.1`
 - License: Apache-2.0
 - Release scope: **0.4.0 byte ingestion and committed recovery kernel**; see [recovery contract and limits](docs/recovery.md).
 
@@ -27,7 +27,7 @@ Pass `-` to read a UTF-8 JSON request from stdin. A single request must be at mo
 ## Library use
 
 ```sh
-moon add btlqql/moon_tracelens@0.4.0
+moon add btlqql/moon_tracelens@0.4.1
 ```
 
 In the consumer's `moon.pkg`:
@@ -87,7 +87,7 @@ moon run cmd/main --target js -- examples/scenario-4.json
 
 不填补空时间桶、不进行观察时长归一化，不把桶统计解释为因果关系或统计显著性。离线内存分析不包含实时 tail 和轮转恢复。
 
-Repository release: 0.3.0; installable MoonCakes module: `btlqql/moon_tracelens@0.4.0`. Earlier repository 1.0.0 labels are retained as history; the module uses the registry-compatible zero-major sequence.
+Repository release: 0.3.0; installable MoonCakes module: `btlqql/moon_tracelens@0.4.1`. Earlier repository 1.0.0 labels are retained as history; the module uses the registry-compatible zero-major sequence.
 
 Current source contains 18 MoonBit test declarations and 16 CLI fixtures (generated fixture tests are included in the declaration count). Run `python -B scripts/followup_reference.py` for independent follow-up oracles and `examples/followup-20261018.json` for the new scenario.
 
@@ -98,3 +98,7 @@ New MoonBit recovery subpackage: byte offsets and pending UTF-8/CRLF framing, bo
 ```sh
 node scripts/journal-test.mjs
 ```
+
+## Review 2026-10-21 / 0.4.1
+
+Before writing a new batch the host verifies that the resulting committed chain fits its recovery JSON envelope. `new Journal(directory, {maxEnvelopeBytes})` accepts 1024..16000000 bytes, default16000000. Reader restarts validate explicitly supplied source/format/line limit; sealed or stale readers fail. Temporary manifests use random names. Replay rejects unknown top-level fields and joins collected text fragments once per source. Core27 tests plus17 new host regression checks; the67 original journal assertions remain separate. See [current boundaries](docs/boundaries.md), [ecological scope](docs/ecosystem.md) and [recovery contract](docs/recovery.md).

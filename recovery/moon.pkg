@@ -1,6 +1,5 @@
 import {
   "moonbitlang/core/debug",
-  "moonbitlang/core/json",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/encoding/hex",
   "gmlewis/sha256",
