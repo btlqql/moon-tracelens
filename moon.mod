@@ -10,7 +10,7 @@ license = "Apache-2.0"
 
 keywords = [ "tracelens", "cli", "moonbit" ]
 
-description = "Offline event normalization, query and request correlation"
+description = "Byte-framed log capture, source generations, committed recovery and deterministic analysis replay"
 
 import {
   "gmlewis/sha256@0.17.33",

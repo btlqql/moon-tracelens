@@ -89,7 +89,7 @@ moon run cmd/main --target js -- examples/scenario-4.json
 
 Repository release: 0.3.0; installable MoonCakes module: `btlqql/moon_tracelens@0.4.1`. Earlier repository 1.0.0 labels are retained as history; the module uses the registry-compatible zero-major sequence.
 
-Current source contains 18 MoonBit test declarations and 16 CLI fixtures (generated fixture tests are included in the declaration count). Run `python -B scripts/followup_reference.py` for independent follow-up oracles and `examples/followup-20261018.json` for the new scenario.
+The 0.3.0 snapshot contained 18 MoonBit test declarations and 16 CLI fixtures (generated fixture tests included). The current 0.4.1 core has 27 tests; host checks are counted separately below. Run `python -B scripts/followup_reference.py` for the earlier analytical oracles and `examples/followup-20261018.json` for that scenario.
 
 ## Version 0.4.0
 
